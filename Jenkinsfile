@@ -63,7 +63,7 @@ pipeline {
                 gitMetaData = gitMetaData(env.GIT_URL)
                 env.avdhesh = gitMetaData
                 String url = "ap.ni.xyz.io"
-                String aws_Service_AccountId = 'svc-'"${url.replaceAll(".xyz.io", "-deploy")}"
+                String aws_Service_AccountId = 'svc-'+"${url.replaceAll(".xyz.io", "-deploy")}"
                 echo "${aws_Service_AccountId}"
                 //def ex = "compile -Dauth0Secret=${variableMap.publicIp} -DawsRegion=${variableMap.awsRegion}"
                 def ex = "compile"
