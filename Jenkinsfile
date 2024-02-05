@@ -19,29 +19,29 @@ pipeline {
                 }
             }
         }
-       stage('Terraform apply') {
-           steps {
-               dir(path: 'tf-tuts') {
-               script {
-               withCredentials([aws(credentialsId: "AWS-Jenkins-Credentials")]) {
-                importTFState("avdhesh15-glo-s3-object-terraform")
-                   sh(
-                           script: """
-                                       terraform apply --auto-approve
-                                   """,
-                           label: "Deploying service layer in AWS"
-                   )
+    //    stage('Terraform apply') {
+    //        steps {
+    //            dir(path: 'tf-tuts') {
+    //            script {
+    //            withCredentials([aws(credentialsId: "AWS-Jenkins-Credentials")]) {
+    //             importTFState("avdhesh15-glo-s3-object-terraform")
+    //                sh(
+    //                        script: """
+    //                                    terraform apply --auto-approve
+    //                                """,
+    //                        label: "Deploying service layer in AWS"
+    //                )
                
-            //    def dd_ip = sh(returnStdout: true, script: "terraform output public_ip").trim()
-            //    def region = sh(returnStdout: true, script: "terraform output aws_region").trim()
-            //    echo dd_ip
-            //    echo region
-            //    variableMap = [publicIp : dd_ip, awsRegion:region]
-               }
-             }
-               }
-           }
-       }
+    //         //    def dd_ip = sh(returnStdout: true, script: "terraform output public_ip").trim()
+    //         //    def region = sh(returnStdout: true, script: "terraform output aws_region").trim()
+    //         //    echo dd_ip
+    //         //    echo region
+    //         //    variableMap = [publicIp : dd_ip, awsRegion:region]
+    //            }
+    //          }
+    //            }
+    //        }
+    //    }
         
 //        stage('Terraform destroy') {
 //            steps {
@@ -62,6 +62,9 @@ pipeline {
                 env.GIT_SERVICE_NAME =env.GIT_REPO_NAME.tokenize('/').last()
                 gitMetaData = gitMetaData(env.GIT_URL)
                 env.avdhesh = gitMetaData
+                String url = "ap.ni.xyz.io"
+                String aws_Service_AccountId = "svc-"${url.replaceAll(".xyz.io", "-deploy")}"
+                echo "${aws_Service_AccountId}"
                 //def ex = "compile -Dauth0Secret=${variableMap.publicIp} -DawsRegion=${variableMap.awsRegion}"
                 def ex = "compile"
                 sh 'printenv'
