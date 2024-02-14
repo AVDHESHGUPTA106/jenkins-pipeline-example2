@@ -109,7 +109,7 @@ String runMaven(final String steps, final String label) {
 }
 
 String gitMetaData(final String giturl){
-
+    echo env.branchName
     def gitOrgRepoName = giturl.replaceFirst(/^.*?(?::\/\/.*?\/|:)(.*).git$/, '$1')
     def gitOrgName = gitOrgRepoName.tokenize('/').first()
     def gitRepoName = gitOrgRepoName.tokenize('/').last()
