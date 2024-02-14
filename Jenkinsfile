@@ -60,6 +60,7 @@ pipeline {
                 env.GIT_REPO_NAME = env.GIT_URL.replaceFirst(/^.*?(?::\/\/.*?\/|:)(.*).git$/, '$1')
                 env.GIT_ORG_NAME =env.GIT_REPO_NAME.tokenize('/').first()
                 env.GIT_SERVICE_NAME =env.GIT_REPO_NAME.tokenize('/').last()
+                env.branchName = env.GIT_BRANCH.tokenize('/').last()
                 gitMetaData = gitMetaData(env.GIT_URL)
                 env.avdhesh = gitMetaData
                 String url = "ap.ni.xyz.io"
