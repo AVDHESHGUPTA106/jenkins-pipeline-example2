@@ -1,13 +1,22 @@
 #!/usr/bin/groovy
-
 def variableMap
+
+def performanceSlackMsg = [:]
+
 pipeline {
     agent any
-
     tools { 
       maven 'maven' 
       jdk 'Java' 
     }
+parameters {
+    string(
+      name: "access_token",
+      defaultValue: '',
+      description: "It is an auth0 access token used to access the core sizing lambda API, and it is a mandatory parameter. There is documentation (https://anaplansite.atlassian.net/wiki/spaces/IN/pages/2675312130/Auth0+introduction#How-can-I-manually-get-an-authorization-token-for-testing-purposes) to get a bearer auth0 tenant token, its expiration time is 10800 seconds.",
+    )
+}
+
     stages {
         stage('Terraform init') {
             when {
@@ -56,6 +65,27 @@ pipeline {
         stage('Build') {
             steps {
                 script {
+               def lastSuccessfulBuildVersion = 0
+                def build = currentBuild.previousBuild
+                while (build != null) {
+                    if (build.result == "SUCCESS")
+                    {
+                        lastSuccessfulBuildVersion = build.displayName as String
+                        println build.displayName
+                        break
+                    }
+                build = build.previousBuild
+            }
+            println lastSuccessfulBuildVersion
+             println ${env.VERSION}
+
+
+            // read -s "${params.access_token}"
+
+            echo "Your password is masked.${params.access_token}"
+
+                //env.performanceSlackMsg = [:]
+
                 variableMap = [publicIp : '1.1.1.10.1', awsRegion:'asdfg']
                 env.GIT_REPO_NAME = env.GIT_URL.replaceFirst(/^.*?(?::\/\/.*?\/|:)(.*).git$/, '$1')
                 env.GIT_ORG_NAME =env.GIT_REPO_NAME.tokenize('/').first()
@@ -70,6 +100,13 @@ pipeline {
                 def ex = "compile"
                 sh 'printenv'
                 echo "${env.WORKSPACE}"
+
+                performanceSlackMsg['title'] = (performanceSlackMsg['title'] ?: '') + 'newDegradations' + '\n'
+                println performanceSlackMsg.isEmpty()
+                perfSlack = ''
+                performanceSlackMsg.each { title, degradation -> perfSlack += (title + degradation + '\n') }
+                echo "${perfSlack}"
+                
                 def  FILES_LIST = sh (script: "ls   '${env.WORKSPACE}'", returnStdout: true).trim()
                 //DEBUG
                 echo "FILES_LIST : ${FILES_LIST}"
@@ -108,6 +145,20 @@ String runMaven(final String steps, final String label) {
         sh script: "mvn --no-transfer-progress -B -e ${steps}", label: label
 }
 
+def commitHashForBuild(build) {
+  def scmAction = build?.actions.find { action -> action instanceof jenkins.scm.api.SCMRevisionAction }
+  return scmAction?.revision?.hash
+}
+
+def getLastSuccessfulCommit() {
+  def lastSuccessfulHash = null
+  def lastSuccessfulBuild = currentBuild.rawBuild.getPreviousSuccessfulBuild()
+  if ( lastSuccessfulBuild ) {
+    lastSuccessfulHash = commitHashForBuild(lastSuccessfulBuild)
+  }
+  return lastSuccessfulHash
+}
+
 String gitMetaData(final String giturl){
     echo env.branchName
     def gitOrgRepoName = env.GIT_URL.replaceFirst(/^.*?(?::\/\/.*?\/|:)(.*).git$/, '$1')
@@ -139,4 +190,18 @@ def importTFState(s3bucket){
     // if(!stExist || replacement)
     // sh script: "terraform state rm aws_s3_bucket.b1"
     // sh script: "terraform import aws_s3_bucket.b1 avdhesh8-glo-s3-object-terraform"
+}
+
+def getLastSuccessfulBuildID(){
+    def lastSuccessfulBuildID = 0
+    def build = currentBuild.previousBuild
+        while (build != null) {
+            if (build.result == "SUCCESS")
+                {
+                    lastSuccessfulBuildID = build.id as Integer
+                    break
+                }
+            build = build.previousBuild
+        }
+    return lastSuccessfulBuildID
 }
